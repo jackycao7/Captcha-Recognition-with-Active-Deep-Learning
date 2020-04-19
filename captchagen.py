@@ -30,8 +30,8 @@ def createCaptchas(dataDir, epoch, width, height, domain, train = True):
 
 
 
-createCaptchas(os.path.join("./data4all/train"), epoch = 1, width = 120, height = 100, 
-	domain = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ", train = True)
+createCaptchas(os.path.join("./dataf/train"), epoch = 1, width = 120, height = 100, 
+	domain = "0123456789", train = True)
 
-createCaptchas(os.path.join("./data4all/test"), epoch = 1, width = 120, height = 100, 
-	domain = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ", train = False)
+createCaptchas(os.path.join("./dataf/test"), epoch = 1, width = 120, height = 100, 
+	domain = "0123456789", train = False)

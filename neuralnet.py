@@ -1,5 +1,5 @@
 import tensorflow as tf 
-from tensorflow.keras import layers, models, optimizers
+from tensorflow.keras import layers, models, optimizers, callbacks
 
 
 class NeuralNet(object):
@@ -9,13 +9,7 @@ class NeuralNet(object):
 		self.max_step_size = max_step_size
 
 	# Create graph with convolutional, pooling and fully connected layers
-	# Tested models:
-	# 85% Acccuracy: 3 Conv [48, 64, 128], (3,3) kernel, padding = 'same', strides = (2,2) on first and third CNN and Pool
-	#  				 dropout after every CNN layer and first fully connected. Fully connected = [1024, 40] @ 50 Epoch, batch size 64
-
-	# # 89.95% Acccuracy: 4 Conv [48, 64, 128, 256], (3,3) kernel, padding = 'same', strides = (2,2) on first and third CNN and Pool
-	#  				 dropout after every CNN layer and first fully connected. Fully connected = [1024, 40] @ 80 Epoch, batch size 64
-	def generateModel(self, numOutputs = [48,64,128, 256], kernelSize = (3,3), filterPadding = 'same'):
+	def generateModel(self, numOutputs = [48,64,128, 256], kernelSize = (5,5), filterPadding = 'same'):
 		imageSize = (120, 100, 1)
 		inputImage = layers.Input(shape=imageSize)
 

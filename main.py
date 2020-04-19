@@ -1,24 +1,24 @@
 import os
-import argparse
-import datetime
-import sys
 import json
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
 import neuralnet
-from tensorflow.keras import datasets, layers, models, optimizers
+from tensorflow.keras import datasets, layers, models, optimizers, callbacks
+import changelr
 
+
+WIDTH = 120
+HEIGHT = 100
+OUTPUT = 10
+OUTPUT_DIM = 4
 
 def load_captchas():
-    path = './data'
+    path = './data4len4digit'
     dirs = ['train', 'test']
+    #alphabet = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
     alphabet = '0123456789'
-
-    captcha_info = os.path.join(path, 'info.json')
-    with open(captcha_info, 'r') as f:
-        info = json.load(f)
 
     train_c = []
     train_l = []
@@ -28,10 +28,12 @@ def load_captchas():
     labels = [train_l, test_l]
     for i in range(len(dirs)):
         folder = dirs[i]
+        q = 0
         for fn in os.listdir(os.path.join(path, folder)):
             if fn.endswith('.png'):
+                q+=1
                 fpath = os.path.join(path, folder, fn)
-                im = np.asarray(Image.open(fpath).convert('L').resize((120, 100), Image.ANTIALIAS))
+                im = np.asarray(Image.open(fpath).convert('L').resize((WIDTH, HEIGHT), Image.ANTIALIAS))
                 #im = im.reshape(120*100)
                 captchas[i].append(im)
                 data = os.path.basename(fpath).split('_')[0]
@@ -42,58 +44,127 @@ def load_captchas():
                     da[ind] = 1
                     label.extend(da)
                 labels[i].append(label)
+            if(q % 1000 == 0):
+                print(q)
 
 
     for i in range(2):
         captchas[i] = np.array(captchas[i])
         labels[i] = np.array(labels[i])
 
-    print(info)
-    return (info, captchas, labels)
-
-## For testing if network works
-# def formatDataMNIST():
-#     (train_images, train_labels), (test_images, test_labels) = datasets.mnist.load_data()
-
-#     train_images = train_images.reshape(60000, 28, 28, 1).astype('float32') / 255.0
-#     test_images = test_images.reshape(10000, 28, 28, 1).astype('float32') / 255.0
-
-#     train_labels = tf.keras.utils.to_categorical(train_labels, 10)
-#     test_labels = tf.keras.utils.to_categorical(test_labels, 10)
-#     return (train_images, train_labels, test_images, test_labels)
-
-#trainImages, trainLabels, testImages, testLabels = formatDataMNIST()
+    return (captchas, labels)
 
 def formatData():
     trainImages = captchas[0]
     testImages = captchas[1]
-    # plt.imshow(trainImages[73])
-    # plt.show()
 
-    trainImages = trainImages.reshape(-1,120,100,1).astype('float32') / 255.0
-    testImages = testImages.reshape(-1,120,100,1).astype('float32') / 255.0
+    trainImages = trainImages.reshape(-1,WIDTH,HEIGHT,1).astype('float32') / 255.0
+    testImages = testImages.reshape(-1,WIDTH,HEIGHT,1).astype('float32') / 255.0
 
     trainLabels = labels[0]
     testLabels = labels[1]
-    trainLabels = tf.reshape(trainLabels, [-1, 4, 10])
-    testLabels = tf.reshape(testLabels, [-1, 4, 10])
+    trainLabels = tf.reshape(trainLabels, [-1, OUTPUT_DIM, OUTPUT])
+    testLabels = tf.reshape(testLabels, [-1, OUTPUT_DIM, OUTPUT])
 
+    #print(trainLabels.shape)
 
     return (trainImages, testImages, trainLabels, testLabels)
 
 
+def getMostUncertainSamples(predictions, correctIndex, currentTestImages, currentTestLabels):
 
-info, captchas, labels = load_captchas()
+    uncer = []
+    # Calculate uncertainties according to formula in paper
+    for k in correctIndex:
+        predUncer = 0
+        for i in range(OUTPUT_DIM):
+            normalized = predictions[k][i] / sum(predictions[k][i])
+            normMax = np.amax(normalized)
+            maxDiv = (np.amax(normalized / normMax))/normMax
+            predUncer += maxDiv
+
+        predUncer = predUncer / OUTPUT_DIM
+        uncer.append(predUncer)
+
+    toConcat = []
+    toConcatLabels = []
+    numAdded = 0
+
+    if(len(uncer) > 0):
+        perc = np.percentile(uncer, 90)
+        # Add uncertain samples to training data 
+        for i, val in enumerate(uncer):
+            if(val >= perc):
+                numAdded+=1
+                indexImage = int(correctIndex[i])
+                toConcat.append(currentTestImages[indexImage,:,:])
+                toConcatLabels.append(currentTestLabels[indexImage,:,:])
+
+    return toConcat, toConcatLabels, numAdded
+
+
+def ADL(model, trainImages, trainLabels, testImages, testLabels):
+    currentTrainImages = trainImages
+    currentTrainLabels = trainLabels
+
+    currentTestImages = testImages
+    currentTestLabels = testLabels
+
+
+    ChangeLearningRate = changelr.ChangeLearningRate()
+    
+    # Each i is one ADL epoch
+    for i in range(5):
+        print('Re-training iteration:', i)
+        # Callback to change learning rate of SGD
+        history = model.fit(x=currentTrainImages, y=currentTrainLabels,
+                               validation_data = (currentTestImages, currentTestLabels), epochs = 10, batch_size = 64, callbacks=[ChangeLearningRate])
+
+        predictions = model.predict(currentTestImages)
+
+        correctIndex = []
+        wrong = []
+
+        for i in range(len(predictions)):
+            isEqual = True
+            for j in range(len(currentTestLabels[0])):
+                currLabel = currentTestLabels[i][j].numpy().argmax()
+                currPredict = predictions[i][j].argmax()
+                if(currLabel != currPredict):
+                    isEqual = False
+                    break 
+            if(isEqual):
+                correctIndex.append(i)
+            else:
+                wrong.append(i)
+
+        print(len(correctIndex))
+        print(len(wrong))
+
+        toConcat, toConcatLabels, numAdded = getMostUncertainSamples(predictions, correctIndex, currentTestImages, currentTestLabels)
+
+        if(len(toConcat) > 0):
+            currentTrainImages = np.concatenate([currentTrainImages, toConcat])
+            currentTrainLabels = np.concatenate([currentTrainLabels, toConcatLabels])
+        print("Added", numAdded)
+
+    return history
+
+
+
+
+captchas, labels = load_captchas()
+
+
 trainImages, testImages, trainLabels, testLabels = formatData()
+
 
 nn = neuralnet.NeuralNet(100, 10000)
 model = nn.generateModel()
 model.summary()
 
-adam = optimizers.Adam(lr = 0.0001)
-model.compile(adam, loss = 'mean_squared_error', metrics=['accuracy'])
-history = model.fit(x=trainImages, y=trainLabels, epochs = 150, validation_data=(testImages, testLabels), batch_size = 64)
+sgd = optimizers.SGD(lr = 0.01, momentum = 0.9)
+model.compile(sgd, loss = 'mean_squared_error', metrics=['accuracy'])
 
-score = model.evaluate(testImages, testLabels, batch_size = 64)
-
+history = ADL(model, trainImages, trainLabels, testImages, testLabels)
 
