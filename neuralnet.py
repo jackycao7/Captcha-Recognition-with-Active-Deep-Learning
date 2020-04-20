@@ -9,7 +9,7 @@ class NeuralNet(object):
 		self.max_step_size = max_step_size
 
 	# Create graph with convolutional, pooling and fully connected layers
-	def generateModel(self, numOutputs = [48,64,128, 256], kernelSize = (5,5), filterPadding = 'same'):
+	def generateModel(self, numOutputs = [48,64,128], kernelSize = (5,5), filterPadding = 'same'):
 		imageSize = (120, 100, 1)
 		inputImage = layers.Input(shape=imageSize)
 
@@ -46,10 +46,10 @@ class NeuralNet(object):
 		convLayers = self.dropoutLayer(convLayers)
 		convLayers = self.maxPool(convLayers, True)
 
-		convLayers = layers.Conv2D(filters = numOutputs[3], kernel_size = kernelSize, padding = filterPadding)(convLayers)
-		convLayers = layers.Activation('relu')(convLayers)
-		convLayers = self.dropoutLayer(convLayers)
-		convLayers = self.maxPool(convLayers, False)
+		# convLayers = layers.Conv2D(filters = numOutputs[3], kernel_size = kernelSize, padding = filterPadding)(convLayers)
+		# convLayers = layers.Activation('relu')(convLayers)
+		# convLayers = self.dropoutLayer(convLayers)
+		# convLayers = self.maxPool(convLayers, False)
 
 
 		return convLayers

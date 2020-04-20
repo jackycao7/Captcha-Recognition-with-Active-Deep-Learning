@@ -15,6 +15,6 @@ class ChangeLearningRate(callbacks.Callback):
 		inner = 1 + (self.y * self.iter)
 		newLR = self.a * math.pow(inner, self.B)
 		backend.set_value(self.model.optimizer.lr, newLR)
-		self.iter += 100
+		self.iter += 64
 		#print(newLR, float(backend.get_value(self.model.optimizer.lr)))
 		

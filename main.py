@@ -110,13 +110,13 @@ def ADL(model, trainImages, trainLabels, testImages, testLabels):
     currentTestImages = testImages
     currentTestLabels = testLabels
 
-
+    # Callback to change learning rate of SGD
     ChangeLearningRate = changelr.ChangeLearningRate()
     
     # Each i is one ADL epoch
     for i in range(5):
         print('Re-training iteration:', i)
-        # Callback to change learning rate of SGD
+
         history = model.fit(x=currentTrainImages, y=currentTrainLabels,
                                validation_data = (currentTestImages, currentTestLabels), epochs = 10, batch_size = 64, callbacks=[ChangeLearningRate])
 
@@ -138,15 +138,15 @@ def ADL(model, trainImages, trainLabels, testImages, testLabels):
             else:
                 wrong.append(i)
 
-        print(len(correctIndex))
-        print(len(wrong))
+        # print(len(correctIndex))
+        # print(len(wrong))
 
         toConcat, toConcatLabels, numAdded = getMostUncertainSamples(predictions, correctIndex, currentTestImages, currentTestLabels)
 
         if(len(toConcat) > 0):
             currentTrainImages = np.concatenate([currentTrainImages, toConcat])
             currentTrainLabels = np.concatenate([currentTrainLabels, toConcatLabels])
-        print("Added", numAdded)
+        #print("Added", numAdded)
 
     return history
 
