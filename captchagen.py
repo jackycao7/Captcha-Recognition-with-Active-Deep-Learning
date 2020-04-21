@@ -20,9 +20,9 @@ def createCaptchas(dataDir, epoch, width, height, domain, train = True):
 		print('generating test data')
 	for x in range(epoch):
 		if(train):
-			totalImages = 10000
+			totalImages = 30000
 		else:
-			totalImages = 50000
+			totalImages = 10000
 		for i in range(totalImages):
 			newCaptcha = ''.join(random.sample(domain,4))
 			newFile = os.path.join(dataDir, '%s_%s.png' % (newCaptcha, uuid.uuid4()))
@@ -30,8 +30,8 @@ def createCaptchas(dataDir, epoch, width, height, domain, train = True):
 
 
 
-createCaptchas(os.path.join("./dataf/train"), epoch = 1, width = 120, height = 100, 
+createCaptchas(os.path.join("./data4len4digi/train"), epoch = 1, width = 120, height = 100, 
 	domain = "0123456789", train = True)
 
-createCaptchas(os.path.join("./dataf/test"), epoch = 1, width = 120, height = 100, 
+createCaptchas(os.path.join("./data4len4digi/test"), epoch = 1, width = 120, height = 100, 
 	domain = "0123456789", train = False)

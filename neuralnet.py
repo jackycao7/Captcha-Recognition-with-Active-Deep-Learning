@@ -46,12 +46,7 @@ class NeuralNet(object):
 		convLayers = self.dropoutLayer(convLayers)
 		convLayers = self.maxPool(convLayers, True)
 
-		# convLayers = layers.Conv2D(filters = numOutputs[3], kernel_size = kernelSize, padding = filterPadding)(convLayers)
-		# convLayers = layers.Activation('relu')(convLayers)
-		# convLayers = self.dropoutLayer(convLayers)
-		# convLayers = self.maxPool(convLayers, False)
-
-
+	
 		return convLayers
 	
 

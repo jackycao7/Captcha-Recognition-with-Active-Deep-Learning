@@ -17,7 +17,6 @@ OUTPUT_DIM = 4
 def load_captchas():
     path = './data4len4digit'
     dirs = ['train', 'test']
-    #alphabet = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
     alphabet = '0123456789'
 
     train_c = []
@@ -34,7 +33,6 @@ def load_captchas():
                 q+=1
                 fpath = os.path.join(path, folder, fn)
                 im = np.asarray(Image.open(fpath).convert('L').resize((WIDTH, HEIGHT), Image.ANTIALIAS))
-                #im = im.reshape(120*100)
                 captchas[i].append(im)
                 data = os.path.basename(fpath).split('_')[0]
                 label = []
@@ -44,9 +42,7 @@ def load_captchas():
                     da[ind] = 1
                     label.extend(da)
                 labels[i].append(label)
-            if(q % 1000 == 0):
-                print(q)
-
+        
 
     for i in range(2):
         captchas[i] = np.array(captchas[i])
@@ -66,7 +62,6 @@ def formatData():
     trainLabels = tf.reshape(trainLabels, [-1, OUTPUT_DIM, OUTPUT])
     testLabels = tf.reshape(testLabels, [-1, OUTPUT_DIM, OUTPUT])
 
-    #print(trainLabels.shape)
 
     return (trainImages, testImages, trainLabels, testLabels)
 
